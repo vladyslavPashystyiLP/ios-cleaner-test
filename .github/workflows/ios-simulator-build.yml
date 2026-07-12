@@ -1,0 +1,34 @@
+name: iOS Simulator build (Appetize)
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Install MAUI workload
+        run: dotnet workload install maui
+
+      - name: Build iOS simulator app
+        run: dotnet build IosCleanerTest/IosCleanerTest.csproj -f net9.0-ios -c Debug -p:RuntimeIdentifier=iossimulator-x64
+
+      - name: Zip .app bundle
+        run: |
+          cd IosCleanerTest/bin/Debug/net9.0-ios/iossimulator-x64
+          zip -r IosCleanerTest.app.zip IosCleanerTest.app
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: IosCleanerTest-simulator
+          path: IosCleanerTest/bin/Debug/net9.0-ios/iossimulator-x64/IosCleanerTest.app.zip
