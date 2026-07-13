@@ -14,6 +14,9 @@ public static class CleanerUi
             ? "Nothing found"
             : $"Found {result.Items.Count} items, {result.TotalBytes / 1024.0 / 1024.0:F1} MB:";
 
+        if (result.Diagnostics is not null)
+            summary.Text += Environment.NewLine + result.Diagnostics;
+
         foreach (var item in result.Items.Take(MaxRows))
             list.Add(BuildItemRow(item));
 

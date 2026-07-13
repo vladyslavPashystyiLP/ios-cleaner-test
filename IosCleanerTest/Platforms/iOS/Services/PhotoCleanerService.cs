@@ -142,23 +142,29 @@ public class PhotoCleanerService : IPhotoCleanerService
         return new ScanResult("Duplicates", items);
     });
 
-    // Vision feature print distance: 0 = identical; visually similar shots stay well
-    // below this threshold, unrelated photos land above it. Tune on real libraries.
+    // Euclidean distance between Vision feature print vectors: 0 = identical.
+    // The absolute scale depends on the feature print revision, so the scan reports
+    // observed min/max distances in Diagnostics — use them to calibrate this value.
     private const float SimilarDistanceThreshold = 0.6f;
 
     public Task<ScanResult> FindSimilarPhotosAsync() => Task.Run(() =>
     {
-        var entries = new List<(PHAsset Asset, VNFeaturePrintObservation Print)>();
+        var total = 0;
+        string? firstError = null;
+        var entries = new List<(PHAsset Asset, float[] Vector)>();
+
         foreach (var asset in FetchAssets(PHAssetMediaType.Image))
         {
-            var print = ComputeFeaturePrint(asset);
-            if (print is not null)
-                entries.Add((asset, print));
+            total++;
+            var vector = ComputeFeatureVector(asset, ref firstError);
+            if (vector is not null)
+                entries.Add((asset, vector));
         }
 
         var groupIndex = new int[entries.Count];
         Array.Fill(groupIndex, -1);
         var groups = new List<List<int>>();
+        float minDist = float.MaxValue, maxDist = 0;
 
         for (var i = 0; i < entries.Count; i++)
         {
@@ -170,12 +176,14 @@ public class PhotoCleanerService : IPhotoCleanerService
 
             for (var j = i + 1; j < entries.Count; j++)
             {
-                if (groupIndex[j] != -1)
+                if (entries[i].Vector.Length != entries[j].Vector.Length)
                     continue;
 
-                // The binding maps the native float* out-param to float[]
-                if (entries[i].Print.ComputeDistance(out var distance, entries[j].Print, out _) &&
-                    distance is { Length: > 0 } && distance[0] <= SimilarDistanceThreshold)
+                var distance = EuclideanDistance(entries[i].Vector, entries[j].Vector);
+                minDist = Math.Min(minDist, distance);
+                maxDist = Math.Max(maxDist, distance);
+
+                if (groupIndex[j] == -1 && distance <= SimilarDistanceThreshold)
                 {
                     groupIndex[j] = groupIndex[i];
                     groups[groupIndex[i]].Add(j);
@@ -199,10 +207,16 @@ public class PhotoCleanerService : IPhotoCleanerService
             }
         }
 
-        return new ScanResult("Similar photos", items);
+        var stats = entries.Count > 1 && minDist < float.MaxValue
+            ? $", distances {minDist:F2}–{maxDist:F2} (threshold {SimilarDistanceThreshold:F2})"
+            : "";
+        var error = firstError is null ? "" : $", first error: {firstError}";
+        var diagnostics = $"[photos {total}, embeddings {entries.Count}{stats}{error}]";
+
+        return new ScanResult("Similar photos", items, diagnostics);
     });
 
-    private static VNFeaturePrintObservation? ComputeFeaturePrint(PHAsset asset)
+    private static float[]? ComputeFeatureVector(PHAsset asset, ref string? firstError)
     {
         UIImage? image = null;
         var options = new PHImageRequestOptions
@@ -217,14 +231,45 @@ public class PhotoCleanerService : IPhotoCleanerService
             (result, _) => image = result);
 
         if (image?.CGImage is not { } cgImage)
+        {
+            firstError ??= "no preview image";
             return null;
+        }
 
         using var handler = new VNImageRequestHandler(cgImage, new VNImageOptions());
         using var request = new VNGenerateImageFeaturePrintRequest((VNRequestCompletionHandler?)null);
-        if (!handler.Perform([request], out _))
-            return null;
+        request.UsesCpuOnly = true; // no GPU/ANE on the simulator
 
-        return request.GetResults<VNFeaturePrintObservation>()?.FirstOrDefault();
+        if (!handler.Perform([request], out var error))
+        {
+            firstError ??= error?.LocalizedDescription ?? "Perform failed";
+            return null;
+        }
+
+        var observation = request.GetResults<VNFeaturePrintObservation>()?.FirstOrDefault();
+        if (observation is null)
+        {
+            firstError ??= "no feature print observation";
+            return null;
+        }
+
+        // Copy the raw float vector out of the observation
+        var count = (int)observation.ElementCount;
+        var vector = new float[count];
+        System.Runtime.InteropServices.Marshal.Copy(observation.Data.Bytes, vector, 0, count);
+        return vector;
+    }
+
+    private static float EuclideanDistance(float[] a, float[] b)
+    {
+        double sum = 0;
+        for (var i = 0; i < a.Length; i++)
+        {
+            var d = a[i] - b[i];
+            sum += d * d;
+        }
+
+        return (float)Math.Sqrt(sum);
     }
 
     private static byte[]? GetThumbnailJpeg(PHAsset asset)

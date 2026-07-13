@@ -2,7 +2,7 @@ namespace IosCleanerTest.Services;
 
 public record CleanerItem(string Id, string Name, long SizeBytes, byte[]? Thumbnail = null);
 
-public record ScanResult(string Category, IReadOnlyList<CleanerItem> Items)
+public record ScanResult(string Category, IReadOnlyList<CleanerItem> Items, string? Diagnostics = null)
 {
     public long TotalBytes => Items.Sum(i => i.SizeBytes);
 
