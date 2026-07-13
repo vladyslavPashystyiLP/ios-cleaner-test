@@ -28,5 +28,9 @@
 	</array>
 	<key>XSAppIconAssets</key>
 	<string>Assets.xcassets/appicon.appiconset</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Потрібен доступ до галереї, щоб знаходити скриншоти, великі відео та важкі файли.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Потрібно для збереження тестових фото і відео в галерею.</string>
 </dict>
 </plist>

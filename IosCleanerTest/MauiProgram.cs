@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using IosCleanerTest.Services;
+using Microsoft.Extensions.Logging;
 
 namespace IosCleanerTest
 {
@@ -14,6 +15,15 @@ namespace IosCleanerTest
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                     fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
                 });
+
+#if IOS
+            builder.Services.AddSingleton<IPhotoCleanerService, PhotoCleanerService>();
+            builder.Services.AddSingleton<ITestDataSeeder, TestDataSeeder>();
+#else
+            builder.Services.AddSingleton<IPhotoCleanerService, UnsupportedPhotoCleanerService>();
+            builder.Services.AddSingleton<ITestDataSeeder, UnsupportedTestDataSeeder>();
+#endif
+            builder.Services.AddTransient<MainPage>();
 
 #if DEBUG
     		builder.Logging.AddDebug();
