@@ -38,6 +38,7 @@
                         <Button Text="Add test data" Clicked="OnSeedScreenshot" />
                     </HorizontalStackLayout>
                     <Label x:Name="ScreenshotsResult" Style="{StaticResource ResultLabel}" Text="—" />
+                    <VerticalStackLayout x:Name="ScreenshotsList" Spacing="8" />
                 </VerticalStackLayout>
             </Border>
 
@@ -49,6 +50,7 @@
                         <Button Text="Add test data" Clicked="OnSeedLivePhoto" />
                     </HorizontalStackLayout>
                     <Label x:Name="LivePhotosResult" Style="{StaticResource ResultLabel}" Text="—" />
+                    <VerticalStackLayout x:Name="LivePhotosList" Spacing="8" />
                 </VerticalStackLayout>
             </Border>
 
@@ -60,6 +62,7 @@
                         <Button Text="Add test data" Clicked="OnSeedLargeVideo" />
                     </HorizontalStackLayout>
                     <Label x:Name="LargeVideosResult" Style="{StaticResource ResultLabel}" Text="—" />
+                    <VerticalStackLayout x:Name="LargeVideosList" Spacing="8" />
                 </VerticalStackLayout>
             </Border>
 
@@ -71,6 +74,7 @@
                         <Button Text="Add test data" Clicked="OnSeedHeavyImages" />
                     </HorizontalStackLayout>
                     <Label x:Name="HeaviestResult" Style="{StaticResource ResultLabel}" Text="—" />
+                    <VerticalStackLayout x:Name="HeaviestList" Spacing="8" />
                 </VerticalStackLayout>
             </Border>
 

@@ -18,16 +18,16 @@ namespace IosCleanerTest
         }
 
         private void OnScanScreenshots(object? sender, EventArgs e) =>
-            RunScan(ScreenshotsResult, () => _cleaner.FindScreenshotsAsync());
+            RunScan(ScreenshotsResult, ScreenshotsList, () => _cleaner.FindScreenshotsAsync());
 
         private void OnScanLivePhotos(object? sender, EventArgs e) =>
-            RunScan(LivePhotosResult, () => _cleaner.FindLivePhotosAsync());
+            RunScan(LivePhotosResult, LivePhotosList, () => _cleaner.FindLivePhotosAsync());
 
         private void OnScanLargeVideos(object? sender, EventArgs e) =>
-            RunScan(LargeVideosResult, () => _cleaner.FindLargeVideosAsync(LargeVideoMinBytes));
+            RunScan(LargeVideosResult, LargeVideosList, () => _cleaner.FindLargeVideosAsync(LargeVideoMinBytes));
 
         private void OnScanHeaviest(object? sender, EventArgs e) =>
-            RunScan(HeaviestResult, () => _cleaner.FindHeaviestAssetsAsync(HeaviestTopN));
+            RunScan(HeaviestResult, HeaviestList, () => _cleaner.FindHeaviestAssetsAsync(HeaviestTopN));
 
         private void OnSeedScreenshot(object? sender, EventArgs e) =>
             RunSeed(ScreenshotsResult, () => _seeder.AddScreenshotLikeImageAsync());
@@ -43,16 +43,17 @@ namespace IosCleanerTest
         private void OnSeedHeavyImages(object? sender, EventArgs e) =>
             RunSeed(HeaviestResult, () => _seeder.AddHeavyImagesAsync(3));
 
-        private async void RunScan(Label output, Func<Task<ScanResult>> scan)
+        private async void RunScan(Label output, VerticalStackLayout list, Func<Task<ScanResult>> scan)
         {
             if (!await EnsureAccessAsync())
                 return;
 
             output.Text = "Scanning…";
+            list.Clear();
             try
             {
                 var result = await scan();
-                output.Text = result.Summary;
+                CleanerUi.ShowResult(output, list, result);
             }
             catch (Exception ex)
             {

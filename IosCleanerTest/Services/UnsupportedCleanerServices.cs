@@ -11,6 +11,7 @@ public class UnsupportedPhotoCleanerService : IPhotoCleanerService
     public Task<ScanResult> FindLargeVideosAsync(long minBytes) => Task.FromResult(Empty("Large videos"));
     public Task<ScanResult> FindHeaviestAssetsAsync(int topN) => Task.FromResult(Empty("Heaviest files"));
     public Task<ScanResult> FindDuplicatesAsync() => Task.FromResult(Empty("Duplicates"));
+    public Task<ScanResult> FindSimilarPhotosAsync() => Task.FromResult(Empty("Similar photos"));
 }
 
 public class UnsupportedTestDataSeeder : ITestDataSeeder
@@ -21,4 +22,5 @@ public class UnsupportedTestDataSeeder : ITestDataSeeder
     public Task<string> AddLargeVideoAsync() => Task.FromResult(Message);
     public Task<string> AddHeavyImagesAsync(int count) => Task.FromResult(Message);
     public Task<string> AddDuplicatesAsync() => Task.FromResult(Message);
+    public Task<string> AddSimilarPhotosAsync() => Task.FromResult(Message);
 }

@@ -190,6 +190,53 @@ public class TestDataSeeder : ITestDataSeeder
         return "Saved 3 files: 2 exact PNG copies + 1 re-encoded JPEG";
     }
 
+    public async Task<string> AddSimilarPhotosAsync()
+    {
+        var seed = Random.Shared.Next();
+        var size = new CGSize(800, 600);
+        var stamp = DateTime.Now.ToString("HHmmss");
+
+        // Same deterministic scene twice; the variant adds a small badge in the corner,
+        // so the images are visually similar but not bit-identical
+        for (var variant = 0; variant < 2; variant++)
+        {
+            var local = new Random(seed);
+            var format = UIGraphicsImageRendererFormat.DefaultFormat;
+            format.Scale = 1;
+            format.Opaque = true;
+
+            var renderer = new UIGraphicsImageRenderer(size, format);
+            var isVariant = variant == 1;
+            var png = renderer.CreatePng(ctx =>
+            {
+                UIColor.FromRGB(local.Next(256), local.Next(256), local.Next(256)).SetFill();
+                ctx.FillRect(new CGRect(0, 0, size.Width, size.Height));
+                for (var i = 0; i < 5; i++)
+                {
+                    UIColor.FromRGB(local.Next(256), local.Next(256), local.Next(256)).SetFill();
+                    ctx.FillRect(new CGRect(local.Next(600), local.Next(400), 150 + local.Next(150), 150 + local.Next(150)));
+                }
+
+                if (isVariant)
+                {
+                    UIColor.White.SetFill();
+                    ctx.FillRect(new CGRect(20, 20, 60, 60));
+                }
+            });
+
+            await PerformChangesAsync(() =>
+            {
+                var request = PHAssetCreationRequest.CreationRequestForAsset();
+                request.AddResource(PHAssetResourceType.Photo, png, new PHAssetResourceCreationOptions
+                {
+                    OriginalFilename = $"TestSim_{stamp}_{(isVariant ? "b" : "a")}.png",
+                });
+            });
+        }
+
+        return "Saved 2 similar photos (variant differs by a small corner badge)";
+    }
+
     // The PHPhotoLibrary binding only has the callback version of PerformChanges
     private static Task PerformChangesAsync(Action changes)
     {

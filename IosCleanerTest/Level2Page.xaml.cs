@@ -27,12 +27,7 @@ namespace IosCleanerTest
             try
             {
                 var result = await _cleaner.FindDuplicatesAsync();
-                DuplicatesResult.Text = result.Items.Count == 0
-                    ? "Nothing found"
-                    : $"Found {result.Items.Count} items, {result.TotalBytes / 1024.0 / 1024.0:F1} MB:";
-
-                foreach (var item in result.Items)
-                    DuplicatesList.Add(BuildItemRow(item));
+                CleanerUi.ShowResult(DuplicatesResult, DuplicatesList, result);
             }
             catch (Exception ex)
             {
@@ -57,34 +52,6 @@ namespace IosCleanerTest
             {
                 DuplicatesResult.Text = $"Error: {ex.Message}";
             }
-        }
-
-        private static IView BuildItemRow(CleanerItem item)
-        {
-            var row = new HorizontalStackLayout { Spacing = 10 };
-
-            if (item.Thumbnail is { Length: > 0 } bytes)
-            {
-                row.Add(new Image
-                {
-                    WidthRequest = 90,
-                    HeightRequest = 90,
-                    Aspect = Aspect.AspectFill,
-                    Source = ImageSource.FromStream(() => new MemoryStream(bytes)),
-                });
-            }
-
-            row.Add(new Label
-            {
-                Text = $"{item.Name}\n{item.SizeBytes / 1024.0 / 1024.0:F1} MB",
-                FontSize = 12,
-                TextColor = Colors.Gray,
-                VerticalOptions = LayoutOptions.Center,
-                LineBreakMode = LineBreakMode.CharacterWrap,
-                MaximumWidthRequest = 220,
-            });
-
-            return row;
         }
     }
 }

@@ -23,4 +23,11 @@ public interface IPhotoCleanerService
     /// of a group except the first one (the "original") end up in the result.
     /// </summary>
     Task<ScanResult> FindDuplicatesAsync();
+
+    /// <summary>
+    /// Level 3: visually similar photos via Vision feature print embeddings.
+    /// Photos whose embedding distance is below the threshold are grouped;
+    /// the first file of each group stays as the reference.
+    /// </summary>
+    Task<ScanResult> FindSimilarPhotosAsync();
 }

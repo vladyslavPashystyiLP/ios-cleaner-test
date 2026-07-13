@@ -13,4 +13,7 @@ public interface ITestDataSeeder
 
     /// <summary>For duplicate testing: one random photo saved twice (exact copies) + a re-encoded JPEG version.</summary>
     Task<string> AddDuplicatesAsync();
+
+    /// <summary>For similar-photos testing: one scene saved twice with a small visual difference.</summary>
+    Task<string> AddSimilarPhotosAsync();
 }

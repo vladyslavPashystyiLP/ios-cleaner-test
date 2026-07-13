@@ -3,6 +3,7 @@ using CoreGraphics;
 using Foundation;
 using Photos;
 using UIKit;
+using Vision;
 
 namespace IosCleanerTest.Services;
 
@@ -40,7 +41,7 @@ public class PhotoCleanerService : IPhotoCleanerService
                     (w == screenH && h == screenW);
 
                 if (isScreenshotSubtype || (isPng && matchesScreenSize))
-                    items.Add(ToItem(asset, resource));
+                    items.Add(ToItem(asset, resource) with { Thumbnail = GetThumbnailJpeg(asset) });
             }
 
             return new ScanResult("Screenshots", items);
@@ -51,7 +52,7 @@ public class PhotoCleanerService : IPhotoCleanerService
     {
         var items = FetchAssets(PHAssetMediaType.Image)
             .Where(a => a.MediaSubtypes.HasFlag(PHAssetMediaSubtype.PhotoLive))
-            .Select(a => ToItem(a, PrimaryResource(a)))
+            .Select(a => ToItem(a, PrimaryResource(a)) with { Thumbnail = GetThumbnailJpeg(a) })
             .ToList();
 
         return new ScanResult("Live Photos", items);
@@ -59,10 +60,12 @@ public class PhotoCleanerService : IPhotoCleanerService
 
     public Task<ScanResult> FindLargeVideosAsync(long minBytes) => Task.Run(() =>
     {
+        // Thumbnails are attached after filtering so we don't fetch previews of the whole library
         var items = FetchAssets(PHAssetMediaType.Video)
-            .Select(a => ToItem(a, PrimaryResource(a)))
-            .Where(i => i.SizeBytes >= minBytes)
-            .OrderByDescending(i => i.SizeBytes)
+            .Select(a => (Asset: a, Item: ToItem(a, PrimaryResource(a))))
+            .Where(x => x.Item.SizeBytes >= minBytes)
+            .OrderByDescending(x => x.Item.SizeBytes)
+            .Select(x => x.Item with { Thumbnail = GetThumbnailJpeg(x.Asset) })
             .ToList();
 
         return new ScanResult("Large videos", items);
@@ -72,9 +75,10 @@ public class PhotoCleanerService : IPhotoCleanerService
     {
         var items = FetchAssets(PHAssetMediaType.Image)
             .Concat(FetchAssets(PHAssetMediaType.Video))
-            .Select(a => ToItem(a, PrimaryResource(a)))
-            .OrderByDescending(i => i.SizeBytes)
+            .Select(a => (Asset: a, Item: ToItem(a, PrimaryResource(a))))
+            .OrderByDescending(x => x.Item.SizeBytes)
             .Take(topN)
+            .Select(x => x.Item with { Thumbnail = GetThumbnailJpeg(x.Asset) })
             .ToList();
 
         return new ScanResult("Heaviest files", items);
@@ -137,6 +141,91 @@ public class PhotoCleanerService : IPhotoCleanerService
 
         return new ScanResult("Duplicates", items);
     });
+
+    // Vision feature print distance: 0 = identical; visually similar shots stay well
+    // below this threshold, unrelated photos land above it. Tune on real libraries.
+    private const float SimilarDistanceThreshold = 0.6f;
+
+    public Task<ScanResult> FindSimilarPhotosAsync() => Task.Run(() =>
+    {
+        var entries = new List<(PHAsset Asset, VNFeaturePrintObservation Print)>();
+        foreach (var asset in FetchAssets(PHAssetMediaType.Image))
+        {
+            var print = ComputeFeaturePrint(asset);
+            if (print is not null)
+                entries.Add((asset, print));
+        }
+
+        var groupIndex = new int[entries.Count];
+        Array.Fill(groupIndex, -1);
+        var groups = new List<List<int>>();
+
+        for (var i = 0; i < entries.Count; i++)
+        {
+            if (groupIndex[i] == -1)
+            {
+                groupIndex[i] = groups.Count;
+                groups.Add([i]);
+            }
+
+            for (var j = i + 1; j < entries.Count; j++)
+            {
+                if (groupIndex[j] != -1)
+                    continue;
+
+                // The binding maps the native float* out-param to float[]
+                if (entries[i].Print.ComputeDistance(out var distance, entries[j].Print, out _) &&
+                    distance is { Length: > 0 } && distance[0] <= SimilarDistanceThreshold)
+                {
+                    groupIndex[j] = groupIndex[i];
+                    groups[groupIndex[i]].Add(j);
+                }
+            }
+        }
+
+        var items = new List<CleanerItem>();
+        foreach (var group in groups.Where(g => g.Count >= 2))
+        {
+            var original = ToItem(entries[group[0]].Asset, PrimaryResource(entries[group[0]].Asset));
+            foreach (var index in group.Skip(1))
+            {
+                var asset = entries[index].Asset;
+                var item = ToItem(asset, PrimaryResource(asset));
+                items.Add(item with
+                {
+                    Name = $"{item.Name} (similar to {original.Name})",
+                    Thumbnail = GetThumbnailJpeg(asset),
+                });
+            }
+        }
+
+        return new ScanResult("Similar photos", items);
+    });
+
+    private static VNFeaturePrintObservation? ComputeFeaturePrint(PHAsset asset)
+    {
+        UIImage? image = null;
+        var options = new PHImageRequestOptions
+        {
+            Synchronous = true,
+            DeliveryMode = PHImageRequestOptionsDeliveryMode.HighQualityFormat,
+            ResizeMode = PHImageRequestOptionsResizeMode.Fast,
+            NetworkAccessAllowed = true,
+        };
+        PHImageManager.DefaultManager.RequestImageForAsset(
+            asset, new CGSize(224, 224), PHImageContentMode.AspectFill, options,
+            (result, _) => image = result);
+
+        if (image?.CGImage is not { } cgImage)
+            return null;
+
+        using var handler = new VNImageRequestHandler(cgImage, new VNImageOptions());
+        using var request = new VNGenerateImageFeaturePrintRequest((VNRequestCompletionHandler?)null);
+        if (!handler.Perform([request], out _))
+            return null;
+
+        return request.GetResults<VNFeaturePrintObservation>()?.FirstOrDefault();
+    }
 
     private static byte[]? GetThumbnailJpeg(PHAsset asset)
     {
