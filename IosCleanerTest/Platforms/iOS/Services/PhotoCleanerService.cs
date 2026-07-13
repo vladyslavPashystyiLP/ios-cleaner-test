@@ -12,34 +12,38 @@ public class PhotoCleanerService : IPhotoCleanerService
         return status is PHAuthorizationStatus.Authorized or PHAuthorizationStatus.Limited;
     }
 
-    public Task<ScanResult> FindScreenshotsAsync() => Task.Run(() =>
+    public Task<ScanResult> FindScreenshotsAsync()
     {
-        // Роздільність екрана в пікселях (NativeBounds завжди в портретній орієнтації)
+        // UIKit можна чіпати лише з UI-потоку — знімаємо роздільність екрана до Task.Run
+        // (NativeBounds завжди в портретній орієнтації, у пікселях)
         var native = UIScreen.MainScreen.NativeBounds;
         var screenW = (long)native.Width;
         var screenH = (long)native.Height;
 
-        var items = new List<CleanerItem>();
-        foreach (var asset in FetchAssets(PHAssetMediaType.Image))
+        return Task.Run(() =>
         {
-            var isScreenshotSubtype = asset.MediaSubtypes.HasFlag(PHAssetMediaSubtype.Screenshot);
+            var items = new List<CleanerItem>();
+            foreach (var asset in FetchAssets(PHAssetMediaType.Image))
+            {
+                var isScreenshotSubtype = asset.MediaSubtypes.HasFlag(PHAssetMediaSubtype.Screenshot);
 
-            // Heuristic: PNG з точною роздільністю екрана. Потрібен, бо створеному
-            // програмно тестовому асету неможливо виставити subtype — його ставить лише система.
-            var resource = PrimaryResource(asset);
-            var isPng = resource?.UniformTypeIdentifier == "public.png";
-            var w = (long)asset.PixelWidth;
-            var h = (long)asset.PixelHeight;
-            var matchesScreenSize =
-                (w == screenW && h == screenH) ||
-                (w == screenH && h == screenW);
+                // Heuristic: PNG з точною роздільністю екрана. Потрібен, бо створеному
+                // програмно тестовому асету неможливо виставити subtype — його ставить лише система.
+                var resource = PrimaryResource(asset);
+                var isPng = resource?.UniformTypeIdentifier == "public.png";
+                var w = (long)asset.PixelWidth;
+                var h = (long)asset.PixelHeight;
+                var matchesScreenSize =
+                    (w == screenW && h == screenH) ||
+                    (w == screenH && h == screenW);
 
-            if (isScreenshotSubtype || (isPng && matchesScreenSize))
-                items.Add(ToItem(asset, resource));
-        }
+                if (isScreenshotSubtype || (isPng && matchesScreenSize))
+                    items.Add(ToItem(asset, resource));
+            }
 
-        return new ScanResult("Скриншоти", items);
-    });
+            return new ScanResult("Скриншоти", items);
+        });
+    }
 
     public Task<ScanResult> FindLivePhotosAsync() => Task.Run(() =>
     {
