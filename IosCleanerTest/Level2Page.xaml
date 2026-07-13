@@ -38,6 +38,7 @@
                         <Button Text="Додати тестові" Clicked="OnSeedDuplicates" />
                     </HorizontalStackLayout>
                     <Label x:Name="DuplicatesResult" Style="{StaticResource ResultLabel}" Text="—" />
+                    <VerticalStackLayout x:Name="DuplicatesList" Spacing="8" />
                 </VerticalStackLayout>
             </Border>
 

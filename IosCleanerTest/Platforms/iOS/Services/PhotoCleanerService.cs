@@ -127,12 +127,33 @@ public class PhotoCleanerService : IPhotoCleanerService
             {
                 var (asset, _) = entries[index];
                 var item = ToItem(asset, PrimaryResource(asset));
-                items.Add(item with { Name = $"{item.Name} (дубль {original.Name})" });
+                items.Add(item with
+                {
+                    Name = $"{item.Name} (дубль {original.Name})",
+                    Thumbnail = GetThumbnailJpeg(asset),
+                });
             }
         }
 
         return new ScanResult("Дублікати", items);
     });
+
+    private static byte[]? GetThumbnailJpeg(PHAsset asset)
+    {
+        UIImage? image = null;
+        var options = new PHImageRequestOptions
+        {
+            Synchronous = true,
+            DeliveryMode = PHImageRequestOptionsDeliveryMode.HighQualityFormat,
+            ResizeMode = PHImageRequestOptionsResizeMode.Fast,
+            NetworkAccessAllowed = true,
+        };
+        PHImageManager.DefaultManager.RequestImageForAsset(
+            asset, new CGSize(200, 200), PHImageContentMode.AspectFill, options,
+            (result, _) => image = result);
+
+        return image?.AsJPEG(0.8f)?.ToArray();
+    }
 
     /// <summary>64-бітний dHash: прев'ю → 9x8 у відтінках сірого → біт на кожну пару сусідніх пікселів рядка.</summary>
     private static ulong? ComputeDHash(PHAsset asset)
