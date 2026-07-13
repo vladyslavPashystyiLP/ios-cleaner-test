@@ -22,13 +22,10 @@ jobs:
       - name: Build iOS simulator app
         run: dotnet build IosCleanerTest/IosCleanerTest.csproj -f net9.0-ios -c Debug -p:RuntimeIdentifier=iossimulator-x64
 
-      - name: Zip .app bundle
-        run: |
-          cd IosCleanerTest/bin/Debug/net9.0-ios/iossimulator-x64
-          zip -r IosCleanerTest.app.zip IosCleanerTest.app
-
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: IosCleanerTest-simulator
-          path: IosCleanerTest/bin/Debug/net9.0-ios/iossimulator-x64/IosCleanerTest.app.zip
+          # wildcard робить корінь артефакту = iossimulator-x64, тож .app-папка
+          # зберігається в корені zip — його можна заливати на Appetize напряму
+          path: IosCleanerTest/bin/Debug/net9.0-ios/iossimulator-x64/*.app/**
