@@ -11,15 +11,15 @@ public record ScanResult(string Category, IReadOnlyList<CleanerItem> Items)
         get
         {
             if (Items.Count == 0)
-                return "Нічого не знайдено";
+                return "Nothing found";
 
             var lines = Items.Take(5)
-                .Select(i => $"• {i.Name} — {i.SizeBytes / 1024.0 / 1024.0:F1} МБ");
+                .Select(i => $"• {i.Name} — {i.SizeBytes / 1024.0 / 1024.0:F1} MB");
             var list = string.Join(Environment.NewLine, lines);
             if (Items.Count > 5)
-                list += $"{Environment.NewLine}… і ще {Items.Count - 5}";
+                list += $"{Environment.NewLine}… and {Items.Count - 5} more";
 
-            return $"Знайдено {Items.Count} шт., {TotalBytes / 1024.0 / 1024.0:F1} МБ:{Environment.NewLine}{list}";
+            return $"Found {Items.Count} items, {TotalBytes / 1024.0 / 1024.0:F1} MB:{Environment.NewLine}{list}";
         }
     }
 }

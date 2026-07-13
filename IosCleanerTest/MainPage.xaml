@@ -24,18 +24,18 @@
     <ScrollView>
         <VerticalStackLayout Padding="16" Spacing="12">
 
-            <Label Text="Рівень 1 — пошук за метаданими"
+            <Label Text="Level 1 — Metadata scan"
                    FontSize="20" FontAttributes="Bold" />
 
-            <Label x:Name="AccessStatusLabel" Text="Доступ до галереї: не запитано"
+            <Label x:Name="AccessStatusLabel" Text="Photo library access: not requested"
                    Style="{StaticResource ResultLabel}" />
 
             <Border Style="{StaticResource SectionBorder}">
                 <VerticalStackLayout Spacing="8">
-                    <Label Text="Скриншоти" Style="{StaticResource CategoryTitle}" />
+                    <Label Text="Screenshots" Style="{StaticResource CategoryTitle}" />
                     <HorizontalStackLayout Spacing="8">
-                        <Button Text="Сканувати" Clicked="OnScanScreenshots" />
-                        <Button Text="Додати тестові" Clicked="OnSeedScreenshot" />
+                        <Button Text="Scan" Clicked="OnScanScreenshots" />
+                        <Button Text="Add test data" Clicked="OnSeedScreenshot" />
                     </HorizontalStackLayout>
                     <Label x:Name="ScreenshotsResult" Style="{StaticResource ResultLabel}" Text="—" />
                 </VerticalStackLayout>
@@ -45,8 +45,8 @@
                 <VerticalStackLayout Spacing="8">
                     <Label Text="Live Photos" Style="{StaticResource CategoryTitle}" />
                     <HorizontalStackLayout Spacing="8">
-                        <Button Text="Сканувати" Clicked="OnScanLivePhotos" />
-                        <Button Text="Додати тестові" Clicked="OnSeedLivePhoto" />
+                        <Button Text="Scan" Clicked="OnScanLivePhotos" />
+                        <Button Text="Add test data" Clicked="OnSeedLivePhoto" />
                     </HorizontalStackLayout>
                     <Label x:Name="LivePhotosResult" Style="{StaticResource ResultLabel}" Text="—" />
                 </VerticalStackLayout>
@@ -54,10 +54,10 @@
 
             <Border Style="{StaticResource SectionBorder}">
                 <VerticalStackLayout Spacing="8">
-                    <Label Text="Великі відео (від 10 МБ)" Style="{StaticResource CategoryTitle}" />
+                    <Label Text="Large videos (10+ MB)" Style="{StaticResource CategoryTitle}" />
                     <HorizontalStackLayout Spacing="8">
-                        <Button Text="Сканувати" Clicked="OnScanLargeVideos" />
-                        <Button Text="Додати тестові" Clicked="OnSeedLargeVideo" />
+                        <Button Text="Scan" Clicked="OnScanLargeVideos" />
+                        <Button Text="Add test data" Clicked="OnSeedLargeVideo" />
                     </HorizontalStackLayout>
                     <Label x:Name="LargeVideosResult" Style="{StaticResource ResultLabel}" Text="—" />
                 </VerticalStackLayout>
@@ -65,10 +65,10 @@
 
             <Border Style="{StaticResource SectionBorder}">
                 <VerticalStackLayout Spacing="8">
-                    <Label Text="Найважчі файли (топ-10)" Style="{StaticResource CategoryTitle}" />
+                    <Label Text="Heaviest files (top 10)" Style="{StaticResource CategoryTitle}" />
                     <HorizontalStackLayout Spacing="8">
-                        <Button Text="Сканувати" Clicked="OnScanHeaviest" />
-                        <Button Text="Додати тестові" Clicked="OnSeedHeavyImages" />
+                        <Button Text="Scan" Clicked="OnScanHeaviest" />
+                        <Button Text="Add test data" Clicked="OnSeedHeavyImages" />
                     </HorizontalStackLayout>
                     <Label x:Name="HeaviestResult" Style="{StaticResource ResultLabel}" Text="—" />
                 </VerticalStackLayout>

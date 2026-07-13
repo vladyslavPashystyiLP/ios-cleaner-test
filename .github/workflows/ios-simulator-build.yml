@@ -26,6 +26,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: IosCleanerTest-simulator
-          # wildcard робить корінь артефакту = iossimulator-x64, тож .app-папка
-          # зберігається в корені zip — його можна заливати на Appetize напряму
+          # the wildcard makes iossimulator-x64 the artifact root, so the .app folder
+          # is preserved at the zip root — uploadable to Appetize as-is
           path: IosCleanerTest/bin/Debug/net9.0-ios/iossimulator-x64/*.app/**

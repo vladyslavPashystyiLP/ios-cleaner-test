@@ -34,7 +34,7 @@ public class TestDataSeeder : ITestDataSeeder
             });
         });
 
-        return $"Збережено PNG {bounds.Size.Width * format.Scale}x{bounds.Size.Height * format.Scale} px ({png.Length / 1024} КБ)";
+        return $"Saved PNG {bounds.Size.Width * format.Scale}x{bounds.Size.Height * format.Scale} px ({png.Length / 1024} KB)";
     }
 
     public async Task<string> AddHeavyImagesAsync(int count)
@@ -49,7 +49,7 @@ public class TestDataSeeder : ITestDataSeeder
             format.Scale = 1;
             format.Opaque = true;
 
-            // Кольоровий шум погано стискається — PNG виходить на кілька мегабайтів
+            // Color noise compresses poorly — the PNG ends up several megabytes
             var renderer = new UIGraphicsImageRenderer(size, format);
             var png = renderer.CreatePng(ctx =>
             {
@@ -72,7 +72,7 @@ public class TestDataSeeder : ITestDataSeeder
             });
         }
 
-        return $"Збережено {count} фото, разом {totalBytes / 1024.0 / 1024.0:F1} МБ";
+        return $"Saved {count} photos, {totalBytes / 1024.0 / 1024.0:F1} MB total";
     }
 
     public async Task<string> AddLargeVideoAsync()
@@ -131,7 +131,7 @@ public class TestDataSeeder : ITestDataSeeder
         await writer.FinishWritingAsync();
 
         if (writer.Status != AVAssetWriterStatus.Completed)
-            throw new InvalidOperationException($"Запис відео не вдався: {writer.Error?.LocalizedDescription}");
+            throw new InvalidOperationException($"Video writing failed: {writer.Error?.LocalizedDescription}");
 
         await PerformChangesAsync(() =>
         {
@@ -140,7 +140,7 @@ public class TestDataSeeder : ITestDataSeeder
 
         var sizeMb = new FileInfo(path).Length / 1024.0 / 1024.0;
         File.Delete(path);
-        return $"Збережено відео {seconds} с, ~{sizeMb:F1} МБ";
+        return $"Saved video {seconds}s, ~{sizeMb:F1} MB";
     }
 
     public async Task<string> AddDuplicatesAsync()
@@ -151,7 +151,7 @@ public class TestDataSeeder : ITestDataSeeder
         format.Scale = 1;
         format.Opaque = true;
 
-        // Великі однотонні блоки (не шум) — dHash лишається стабільним після JPEG-перекодування
+        // Large solid blocks (not noise) — dHash stays stable after JPEG re-encoding
         var renderer = new UIGraphicsImageRenderer(size, format);
         var png = renderer.CreatePng(ctx =>
         {
@@ -187,10 +187,10 @@ public class TestDataSeeder : ITestDataSeeder
             });
         });
 
-        return "Збережено 3 файли: 2 точні копії PNG + 1 перекодована JPEG";
+        return "Saved 3 files: 2 exact PNG copies + 1 re-encoded JPEG";
     }
 
-    // У биндингу PHPhotoLibrary є лише callback-версія PerformChanges
+    // The PHPhotoLibrary binding only has the callback version of PerformChanges
     private static Task PerformChangesAsync(Action changes)
     {
         var tcs = new TaskCompletionSource();

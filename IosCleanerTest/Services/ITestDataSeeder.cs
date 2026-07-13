@@ -2,15 +2,15 @@ namespace IosCleanerTest.Services;
 
 public interface ITestDataSeeder
 {
-    /// <summary>Зберігає в галерею PNG з роздільністю екрана — підпадає під heuristic-критерій скриншота.</summary>
+    /// <summary>Saves a screen-resolution PNG to the library — matches the screenshot heuristic.</summary>
     Task<string> AddScreenshotLikeImageAsync();
 
-    /// <summary>Генерує й зберігає відео з шумових кадрів (високий бітрейт → великий файл).</summary>
+    /// <summary>Generates and saves a video of noise frames (high bitrate → large file).</summary>
     Task<string> AddLargeVideoAsync();
 
-    /// <summary>Зберігає кілька великих PNG для тесту категорії «найважчі файли».</summary>
+    /// <summary>Saves several large PNGs to test the "heaviest files" category.</summary>
     Task<string> AddHeavyImagesAsync(int count);
 
-    /// <summary>Для тесту дублікатів: одне випадкове фото двічі (точні копії) + перекодована JPEG-версія.</summary>
+    /// <summary>For duplicate testing: one random photo saved twice (exact copies) + a re-encoded JPEG version.</summary>
     Task<string> AddDuplicatesAsync();
 }

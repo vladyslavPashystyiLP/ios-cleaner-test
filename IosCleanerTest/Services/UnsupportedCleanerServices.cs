@@ -1,21 +1,21 @@
 namespace IosCleanerTest.Services;
 
-// Заглушки для не-iOS платформ: дозволяють збирати й дебажити UI на Windows.
+// Stubs for non-iOS platforms: allow building and debugging the UI on Windows.
 public class UnsupportedPhotoCleanerService : IPhotoCleanerService
 {
     private static ScanResult Empty(string category) => new(category, []);
 
     public Task<bool> RequestAccessAsync() => Task.FromResult(false);
-    public Task<ScanResult> FindScreenshotsAsync() => Task.FromResult(Empty("Скриншоти"));
+    public Task<ScanResult> FindScreenshotsAsync() => Task.FromResult(Empty("Screenshots"));
     public Task<ScanResult> FindLivePhotosAsync() => Task.FromResult(Empty("Live Photos"));
-    public Task<ScanResult> FindLargeVideosAsync(long minBytes) => Task.FromResult(Empty("Великі відео"));
-    public Task<ScanResult> FindHeaviestAssetsAsync(int topN) => Task.FromResult(Empty("Найважчі файли"));
-    public Task<ScanResult> FindDuplicatesAsync() => Task.FromResult(Empty("Дублікати"));
+    public Task<ScanResult> FindLargeVideosAsync(long minBytes) => Task.FromResult(Empty("Large videos"));
+    public Task<ScanResult> FindHeaviestAssetsAsync(int topN) => Task.FromResult(Empty("Heaviest files"));
+    public Task<ScanResult> FindDuplicatesAsync() => Task.FromResult(Empty("Duplicates"));
 }
 
 public class UnsupportedTestDataSeeder : ITestDataSeeder
 {
-    private const string Message = "Доступно лише на iOS";
+    private const string Message = "Available on iOS only";
 
     public Task<string> AddScreenshotLikeImageAsync() => Task.FromResult(Message);
     public Task<string> AddLargeVideoAsync() => Task.FromResult(Message);

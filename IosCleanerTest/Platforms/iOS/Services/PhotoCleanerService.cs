@@ -16,8 +16,8 @@ public class PhotoCleanerService : IPhotoCleanerService
 
     public Task<ScanResult> FindScreenshotsAsync()
     {
-        // UIKit можна чіпати лише з UI-потоку — знімаємо роздільність екрана до Task.Run
-        // (NativeBounds завжди в портретній орієнтації, у пікселях)
+        // UIKit must be touched on the UI thread only — capture screen resolution before Task.Run
+        // (NativeBounds is always portrait-oriented, in pixels)
         var native = UIScreen.MainScreen.NativeBounds;
         var screenW = (long)native.Width;
         var screenH = (long)native.Height;
@@ -29,8 +29,8 @@ public class PhotoCleanerService : IPhotoCleanerService
             {
                 var isScreenshotSubtype = asset.MediaSubtypes.HasFlag(PHAssetMediaSubtype.Screenshot);
 
-                // Heuristic: PNG з точною роздільністю екрана. Потрібен, бо створеному
-                // програмно тестовому асету неможливо виставити subtype — його ставить лише система.
+                // Heuristic: a PNG with exact screen resolution. Needed because a programmatically
+                // created test asset cannot get the subtype — only the system sets it.
                 var resource = PrimaryResource(asset);
                 var isPng = resource?.UniformTypeIdentifier == "public.png";
                 var w = (long)asset.PixelWidth;
@@ -43,7 +43,7 @@ public class PhotoCleanerService : IPhotoCleanerService
                     items.Add(ToItem(asset, resource));
             }
 
-            return new ScanResult("Скриншоти", items);
+            return new ScanResult("Screenshots", items);
         });
     }
 
@@ -65,7 +65,7 @@ public class PhotoCleanerService : IPhotoCleanerService
             .OrderByDescending(i => i.SizeBytes)
             .ToList();
 
-        return new ScanResult("Великі відео", items);
+        return new ScanResult("Large videos", items);
     });
 
     public Task<ScanResult> FindHeaviestAssetsAsync(int topN) => Task.Run(() =>
@@ -77,12 +77,12 @@ public class PhotoCleanerService : IPhotoCleanerService
             .Take(topN)
             .ToList();
 
-        return new ScanResult("Найважчі файли", items);
+        return new ScanResult("Heaviest files", items);
     });
 
-    // Хеші з відстанню Геммінга ≤ порога вважаємо однією групою.
-    // 0 ловить лише побітово стабільні пари; 6 — типовий поріг для dHash,
-    // покриває перекодовані (PNG→JPEG) та злегка стиснуті копії.
+    // Hashes within the Hamming distance threshold are treated as one group.
+    // 0 catches only bit-identical pairs; 6 is a typical dHash threshold that
+    // also covers re-encoded (PNG→JPEG) and slightly compressed copies.
     private const int DuplicateHammingThreshold = 6;
 
     public Task<ScanResult> FindDuplicatesAsync() => Task.Run(() =>
@@ -95,7 +95,7 @@ public class PhotoCleanerService : IPhotoCleanerService
                 entries.Add((asset, hash.Value));
         }
 
-        // Простий O(n²)-кластеринг — для тестових обсягів достатньо
+        // Simple O(n²) clustering — enough for test-scale libraries
         var groupIndex = new int[entries.Count];
         Array.Fill(groupIndex, -1);
         var groups = new List<List<int>>();
@@ -129,13 +129,13 @@ public class PhotoCleanerService : IPhotoCleanerService
                 var item = ToItem(asset, PrimaryResource(asset));
                 items.Add(item with
                 {
-                    Name = $"{item.Name} (дубль {original.Name})",
+                    Name = $"{item.Name} (duplicate of {original.Name})",
                     Thumbnail = GetThumbnailJpeg(asset),
                 });
             }
         }
 
-        return new ScanResult("Дублікати", items);
+        return new ScanResult("Duplicates", items);
     });
 
     private static byte[]? GetThumbnailJpeg(PHAsset asset)
@@ -155,7 +155,7 @@ public class PhotoCleanerService : IPhotoCleanerService
         return image?.AsJPEG(0.8f)?.ToArray();
     }
 
-    /// <summary>64-бітний dHash: прев'ю → 9x8 у відтінках сірого → біт на кожну пару сусідніх пікселів рядка.</summary>
+    /// <summary>64-bit dHash: preview → 9x8 grayscale → one bit per adjacent pixel pair in a row.</summary>
     private static ulong? ComputeDHash(PHAsset asset)
     {
         UIImage? image = null;
@@ -209,7 +209,7 @@ public class PhotoCleanerService : IPhotoCleanerService
     private static CleanerItem ToItem(PHAsset asset, PHAssetResource? resource)
     {
         var name = resource?.OriginalFilename ?? asset.LocalIdentifier;
-        // Публічної властивості розміру немає; "fileSize" через KVC — усталений підхід фото-утиліт
+        // No public size property; "fileSize" via KVC is the established approach in photo utilities
         long size = 0;
         try
         {
@@ -218,7 +218,7 @@ public class PhotoCleanerService : IPhotoCleanerService
         }
         catch (Exception)
         {
-            // ключ недоступний — залишаємо 0, скан не валимо
+            // key unavailable — keep 0, don't fail the scan
         }
 
         return new CleanerItem(asset.LocalIdentifier, name, size);

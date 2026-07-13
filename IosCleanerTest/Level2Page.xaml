@@ -2,7 +2,7 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="IosCleanerTest.Level2Page"
-             Title="Рівень 2">
+             Title="Level 2">
 
     <ContentPage.Resources>
         <Style x:Key="SectionBorder" TargetType="Border">
@@ -24,18 +24,18 @@
     <ScrollView>
         <VerticalStackLayout Padding="16" Spacing="12">
 
-            <Label Text="Рівень 2 — точні дублікати (dHash)"
+            <Label Text="Level 2 — Exact duplicates (dHash)"
                    FontSize="20" FontAttributes="Bold" />
 
-            <Label Text="Перцептивний хеш прев'ю 9x8; збіг з відстанню Геммінга ≤ 6 = копія. Перший файл групи вважається оригіналом і в результат не потрапляє."
+            <Label Text="Perceptual hash of a 9x8 preview; Hamming distance ≤ 6 = a copy. The first file of each group is treated as the original and excluded from results."
                    Style="{StaticResource ResultLabel}" />
 
             <Border Style="{StaticResource SectionBorder}">
                 <VerticalStackLayout Spacing="8">
-                    <Label Text="Дублікати фото" Style="{StaticResource CategoryTitle}" />
+                    <Label Text="Photo duplicates" Style="{StaticResource CategoryTitle}" />
                     <HorizontalStackLayout Spacing="8">
-                        <Button Text="Сканувати" Clicked="OnScanDuplicates" />
-                        <Button Text="Додати тестові" Clicked="OnSeedDuplicates" />
+                        <Button Text="Scan" Clicked="OnScanDuplicates" />
+                        <Button Text="Add test data" Clicked="OnSeedDuplicates" />
                     </HorizontalStackLayout>
                     <Label x:Name="DuplicatesResult" Style="{StaticResource ResultLabel}" Text="—" />
                     <VerticalStackLayout x:Name="DuplicatesList" Spacing="8" />

@@ -2,25 +2,25 @@ namespace IosCleanerTest.Services;
 
 public interface IPhotoCleanerService
 {
-    /// <summary>Запитує доступ до фотобібліотеки. Повертає true, якщо доступ надано (повний або limited).</summary>
+    /// <summary>Requests photo library access. Returns true if granted (full or limited).</summary>
     Task<bool> RequestAccessAsync();
 
-    /// <summary>Скриншоти: PHAssetMediaSubtype.PhotoScreenshot або PNG з роздільністю екрана (heuristic для тестових даних).</summary>
+    /// <summary>Screenshots: PHAssetMediaSubtype.Screenshot, or a PNG with exact screen resolution (heuristic for seeded test data).</summary>
     Task<ScanResult> FindScreenshotsAsync();
 
-    /// <summary>Live Photos за PHAssetMediaSubtype.PhotoLive.</summary>
+    /// <summary>Live Photos via PHAssetMediaSubtype.PhotoLive.</summary>
     Task<ScanResult> FindLivePhotosAsync();
 
-    /// <summary>Відео з розміром файлу не менше minBytes.</summary>
+    /// <summary>Videos with file size of at least minBytes.</summary>
     Task<ScanResult> FindLargeVideosAsync(long minBytes);
 
-    /// <summary>Топ-N найважчих асетів бібліотеки (фото і відео).</summary>
+    /// <summary>Top-N heaviest assets in the library (photos and videos).</summary>
     Task<ScanResult> FindHeaviestAssetsAsync(int topN);
 
     /// <summary>
-    /// Рівень 2: дублікати через перцептивний dHash на прев'ю.
-    /// Хеші з відстанню Геммінга ≤ порога вважаються копіями; у результат
-    /// потрапляють усі файли групи, крім першого («оригінал» лишається).
+    /// Level 2: duplicates via perceptual dHash of previews.
+    /// Hashes within the Hamming distance threshold are treated as copies; all files
+    /// of a group except the first one (the "original") end up in the result.
     /// </summary>
     Task<ScanResult> FindDuplicatesAsync();
 }

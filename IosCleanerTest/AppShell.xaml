@@ -8,11 +8,11 @@
 
     <TabBar>
         <ShellContent
-            Title="Рівень 1"
+            Title="Level 1"
             ContentTemplate="{DataTemplate local:MainPage}"
             Route="Level1" />
         <ShellContent
-            Title="Рівень 2"
+            Title="Level 2"
             ContentTemplate="{DataTemplate local:Level2Page}"
             Route="Level2" />
     </TabBar>

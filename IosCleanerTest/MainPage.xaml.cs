@@ -34,8 +34,8 @@ namespace IosCleanerTest
 
         private async void OnSeedLivePhoto(object? sender, EventArgs e) =>
             await DisplayAlert("Live Photos",
-                "Створити Live Photo програмно не можна: система вимагає спарених метаданих фото+відео. " +
-                "Ця категорія тестується на реальному пристрої зі знятими Live Photos.", "OK");
+                "Live Photos can't be created programmatically: the system requires paired photo+video metadata. " +
+                "Test this category on a real device with captured Live Photos.", "OK");
 
         private void OnSeedLargeVideo(object? sender, EventArgs e) =>
             RunSeed(LargeVideosResult, () => _seeder.AddLargeVideoAsync());
@@ -48,7 +48,7 @@ namespace IosCleanerTest
             if (!await EnsureAccessAsync())
                 return;
 
-            output.Text = "Сканую…";
+            output.Text = "Scanning…";
             try
             {
                 var result = await scan();
@@ -56,7 +56,7 @@ namespace IosCleanerTest
             }
             catch (Exception ex)
             {
-                output.Text = $"Помилка: {ex.Message}";
+                output.Text = $"Error: {ex.Message}";
             }
         }
 
@@ -65,14 +65,14 @@ namespace IosCleanerTest
             if (!await EnsureAccessAsync())
                 return;
 
-            output.Text = "Додаю тестові дані…";
+            output.Text = "Adding test data…";
             try
             {
                 output.Text = await seed();
             }
             catch (Exception ex)
             {
-                output.Text = $"Помилка: {ex.Message}";
+                output.Text = $"Error: {ex.Message}";
             }
         }
 
@@ -80,8 +80,8 @@ namespace IosCleanerTest
         {
             var granted = await _cleaner.RequestAccessAsync();
             AccessStatusLabel.Text = granted
-                ? "Доступ до галереї: надано"
-                : "Доступ до галереї: відхилено (перевір налаштування або платформу)";
+                ? "Photo library access: granted"
+                : "Photo library access: denied (check settings or platform)";
             return granted;
         }
     }
