@@ -143,6 +143,53 @@ public class TestDataSeeder : ITestDataSeeder
         return $"Збережено відео {seconds} с, ~{sizeMb:F1} МБ";
     }
 
+    public async Task<string> AddDuplicatesAsync()
+    {
+        var rnd = Random.Shared;
+        var size = new CGSize(800, 600);
+        var format = UIGraphicsImageRendererFormat.DefaultFormat;
+        format.Scale = 1;
+        format.Opaque = true;
+
+        // Великі однотонні блоки (не шум) — dHash лишається стабільним після JPEG-перекодування
+        var renderer = new UIGraphicsImageRenderer(size, format);
+        var png = renderer.CreatePng(ctx =>
+        {
+            UIColor.FromRGB(rnd.Next(256), rnd.Next(256), rnd.Next(256)).SetFill();
+            ctx.FillRect(new CGRect(0, 0, size.Width, size.Height));
+            for (var i = 0; i < 5; i++)
+            {
+                UIColor.FromRGB(rnd.Next(256), rnd.Next(256), rnd.Next(256)).SetFill();
+                ctx.FillRect(new CGRect(rnd.Next(600), rnd.Next(400), 150 + rnd.Next(150), 150 + rnd.Next(150)));
+            }
+        });
+
+        var stamp = DateTime.Now.ToString("HHmmss");
+        for (var copy = 0; copy < 2; copy++)
+        {
+            await PerformChangesAsync(() =>
+            {
+                var request = PHAssetCreationRequest.CreationRequestForAsset();
+                request.AddResource(PHAssetResourceType.Photo, png, new PHAssetResourceCreationOptions
+                {
+                    OriginalFilename = $"TestDup_{stamp}_copy{copy}.png",
+                });
+            });
+        }
+
+        var jpeg = UIImage.LoadFromData(png)!.AsJPEG(0.7f)!;
+        await PerformChangesAsync(() =>
+        {
+            var request = PHAssetCreationRequest.CreationRequestForAsset();
+            request.AddResource(PHAssetResourceType.Photo, jpeg, new PHAssetResourceCreationOptions
+            {
+                OriginalFilename = $"TestDup_{stamp}_reencoded.jpg",
+            });
+        });
+
+        return "Збережено 3 файли: 2 точні копії PNG + 1 перекодована JPEG";
+    }
+
     // У биндингу PHPhotoLibrary є лише callback-версія PerformChanges
     private static Task PerformChangesAsync(Action changes)
     {

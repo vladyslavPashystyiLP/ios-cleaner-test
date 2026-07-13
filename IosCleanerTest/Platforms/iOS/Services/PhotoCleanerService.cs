@@ -1,3 +1,5 @@
+using System.Numerics;
+using CoreGraphics;
 using Foundation;
 using Photos;
 using UIKit;
@@ -77,6 +79,94 @@ public class PhotoCleanerService : IPhotoCleanerService
 
         return new ScanResult("Найважчі файли", items);
     });
+
+    // Хеші з відстанню Геммінга ≤ порога вважаємо однією групою.
+    // 0 ловить лише побітово стабільні пари; 6 — типовий поріг для dHash,
+    // покриває перекодовані (PNG→JPEG) та злегка стиснуті копії.
+    private const int DuplicateHammingThreshold = 6;
+
+    public Task<ScanResult> FindDuplicatesAsync() => Task.Run(() =>
+    {
+        var entries = new List<(PHAsset Asset, ulong Hash)>();
+        foreach (var asset in FetchAssets(PHAssetMediaType.Image))
+        {
+            var hash = ComputeDHash(asset);
+            if (hash is not null)
+                entries.Add((asset, hash.Value));
+        }
+
+        // Простий O(n²)-кластеринг — для тестових обсягів достатньо
+        var groupIndex = new int[entries.Count];
+        Array.Fill(groupIndex, -1);
+        var groups = new List<List<int>>();
+
+        for (var i = 0; i < entries.Count; i++)
+        {
+            if (groupIndex[i] == -1)
+            {
+                groupIndex[i] = groups.Count;
+                groups.Add([i]);
+            }
+
+            for (var j = i + 1; j < entries.Count; j++)
+            {
+                if (groupIndex[j] == -1 &&
+                    BitOperations.PopCount(entries[i].Hash ^ entries[j].Hash) <= DuplicateHammingThreshold)
+                {
+                    groupIndex[j] = groupIndex[i];
+                    groups[groupIndex[i]].Add(j);
+                }
+            }
+        }
+
+        var items = new List<CleanerItem>();
+        foreach (var group in groups.Where(g => g.Count >= 2))
+        {
+            var original = ToItem(entries[group[0]].Asset, PrimaryResource(entries[group[0]].Asset));
+            foreach (var index in group.Skip(1))
+            {
+                var (asset, _) = entries[index];
+                var item = ToItem(asset, PrimaryResource(asset));
+                items.Add(item with { Name = $"{item.Name} (дубль {original.Name})" });
+            }
+        }
+
+        return new ScanResult("Дублікати", items);
+    });
+
+    /// <summary>64-бітний dHash: прев'ю → 9x8 у відтінках сірого → біт на кожну пару сусідніх пікселів рядка.</summary>
+    private static ulong? ComputeDHash(PHAsset asset)
+    {
+        UIImage? image = null;
+        var options = new PHImageRequestOptions
+        {
+            Synchronous = true,
+            DeliveryMode = PHImageRequestOptionsDeliveryMode.HighQualityFormat,
+            ResizeMode = PHImageRequestOptionsResizeMode.Exact,
+            NetworkAccessAllowed = true,
+        };
+        PHImageManager.DefaultManager.RequestImageForAsset(
+            asset, new CGSize(64, 64), PHImageContentMode.AspectFill, options,
+            (result, _) => image = result);
+
+        if (image?.CGImage is not { } cgImage)
+            return null;
+
+        const int w = 9, h = 8;
+        var pixels = new byte[w * h];
+        using var colorSpace = CGColorSpace.CreateDeviceGray();
+        using var context = new CGBitmapContext(pixels, w, h, 8, w, colorSpace, CGImageAlphaInfo.None);
+        context.DrawImage(new CGRect(0, 0, w, h), cgImage);
+
+        ulong hash = 0;
+        var bit = 0;
+        for (var row = 0; row < h; row++)
+            for (var col = 0; col < w - 1; col++, bit++)
+                if (pixels[row * w + col] > pixels[row * w + col + 1])
+                    hash |= 1UL << bit;
+
+        return hash;
+    }
 
     private static IEnumerable<PHAsset> FetchAssets(PHAssetMediaType type)
     {

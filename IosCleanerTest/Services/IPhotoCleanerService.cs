@@ -16,4 +16,11 @@ public interface IPhotoCleanerService
 
     /// <summary>Топ-N найважчих асетів бібліотеки (фото і відео).</summary>
     Task<ScanResult> FindHeaviestAssetsAsync(int topN);
+
+    /// <summary>
+    /// Рівень 2: дублікати через перцептивний dHash на прев'ю.
+    /// Хеші з відстанню Геммінга ≤ порога вважаються копіями; у результат
+    /// потрапляють усі файли групи, крім першого («оригінал» лишається).
+    /// </summary>
+    Task<ScanResult> FindDuplicatesAsync();
 }

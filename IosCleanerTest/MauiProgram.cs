@@ -24,6 +24,7 @@ namespace IosCleanerTest
             builder.Services.AddSingleton<ITestDataSeeder, UnsupportedTestDataSeeder>();
 #endif
             builder.Services.AddTransient<MainPage>();
+            builder.Services.AddTransient<Level2Page>();
 
 #if DEBUG
     		builder.Logging.AddDebug();

@@ -10,6 +10,7 @@ public class UnsupportedPhotoCleanerService : IPhotoCleanerService
     public Task<ScanResult> FindLivePhotosAsync() => Task.FromResult(Empty("Live Photos"));
     public Task<ScanResult> FindLargeVideosAsync(long minBytes) => Task.FromResult(Empty("Великі відео"));
     public Task<ScanResult> FindHeaviestAssetsAsync(int topN) => Task.FromResult(Empty("Найважчі файли"));
+    public Task<ScanResult> FindDuplicatesAsync() => Task.FromResult(Empty("Дублікати"));
 }
 
 public class UnsupportedTestDataSeeder : ITestDataSeeder
@@ -19,4 +20,5 @@ public class UnsupportedTestDataSeeder : ITestDataSeeder
     public Task<string> AddScreenshotLikeImageAsync() => Task.FromResult(Message);
     public Task<string> AddLargeVideoAsync() => Task.FromResult(Message);
     public Task<string> AddHeavyImagesAsync(int count) => Task.FromResult(Message);
+    public Task<string> AddDuplicatesAsync() => Task.FromResult(Message);
 }

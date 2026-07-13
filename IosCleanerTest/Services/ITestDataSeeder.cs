@@ -10,4 +10,7 @@ public interface ITestDataSeeder
 
     /// <summary>Зберігає кілька великих PNG для тесту категорії «найважчі файли».</summary>
     Task<string> AddHeavyImagesAsync(int count);
+
+    /// <summary>Для тесту дублікатів: одне випадкове фото двічі (точні копії) + перекодована JPEG-версія.</summary>
+    Task<string> AddDuplicatesAsync();
 }
