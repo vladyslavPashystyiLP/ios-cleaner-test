@@ -16,4 +16,7 @@ public interface ITestDataSeeder
 
     /// <summary>For similar-photos testing: one scene saved twice with a small visual difference.</summary>
     Task<string> AddSimilarPhotosAsync();
+
+    /// <summary>For blur testing: saves a Gaussian-blurred photo.</summary>
+    Task<string> AddBlurryImageAsync();
 }

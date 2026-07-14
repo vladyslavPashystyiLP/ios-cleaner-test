@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using AVFoundation;
 using CoreGraphics;
+using CoreImage;
 using CoreMedia;
 using CoreVideo;
 using Foundation;
@@ -235,6 +236,48 @@ public class TestDataSeeder : ITestDataSeeder
         }
 
         return "Saved 2 similar photos (variant differs by a small corner badge)";
+    }
+
+    public async Task<string> AddBlurryImageAsync()
+    {
+        var rnd = Random.Shared;
+        var size = new CGSize(800, 600);
+        var format = UIGraphicsImageRendererFormat.DefaultFormat;
+        format.Scale = 1;
+        format.Opaque = true;
+
+        var renderer = new UIGraphicsImageRenderer(size, format);
+        var sharp = renderer.CreateImage(ctx =>
+        {
+            UIColor.FromRGB(rnd.Next(256), rnd.Next(256), rnd.Next(256)).SetFill();
+            ctx.FillRect(new CGRect(0, 0, size.Width, size.Height));
+            for (var i = 0; i < 8; i++)
+            {
+                UIColor.FromRGB(rnd.Next(256), rnd.Next(256), rnd.Next(256)).SetFill();
+                ctx.FillRect(new CGRect(rnd.Next(600), rnd.Next(400), 100 + rnd.Next(150), 100 + rnd.Next(150)));
+            }
+        });
+
+        using var blurFilter = new CIGaussianBlur
+        {
+            InputImage = new CIImage(sharp.CGImage!),
+            Radius = 12,
+        };
+        using var ciContext = CIContext.FromOptions(null);
+        using var blurredCg = ciContext.CreateCGImage(
+            blurFilter.OutputImage!, new CGRect(0, 0, size.Width, size.Height));
+        var png = new UIImage(blurredCg!).AsPNG()!;
+
+        await PerformChangesAsync(() =>
+        {
+            var request = PHAssetCreationRequest.CreationRequestForAsset();
+            request.AddResource(PHAssetResourceType.Photo, png, new PHAssetResourceCreationOptions
+            {
+                OriginalFilename = $"TestBlur_{DateTime.Now:HHmmss}.png",
+            });
+        });
+
+        return "Saved 1 Gaussian-blurred photo (radius 12)";
     }
 
     // The PHPhotoLibrary binding only has the callback version of PerformChanges

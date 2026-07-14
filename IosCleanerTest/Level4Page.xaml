@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="IosCleanerTest.Level4Page"
+             Title="Level 4">
+
+    <ContentPage.Resources>
+        <Style x:Key="SectionBorder" TargetType="Border">
+            <Setter Property="Stroke" Value="LightGray" />
+            <Setter Property="StrokeShape" Value="RoundRectangle 10" />
+            <Setter Property="Padding" Value="12" />
+        </Style>
+        <Style x:Key="CategoryTitle" TargetType="Label">
+            <Setter Property="FontAttributes" Value="Bold" />
+            <Setter Property="FontSize" Value="16" />
+        </Style>
+        <Style x:Key="ResultLabel" TargetType="Label">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="TextColor" Value="Gray" />
+            <Setter Property="LineBreakMode" Value="WordWrap" />
+        </Style>
+    </ContentPage.Resources>
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="12">
+
+            <Label Text="Level 4 — Blurry photos (Laplacian)"
+                   FontSize="20" FontAttributes="Bold" />
+
+            <Label Text="Variance of the Laplacian on a grayscale preview: few sharp edges = low variance = blurry. Sharpness score is shown per item."
+                   Style="{StaticResource ResultLabel}" />
+
+            <Border Style="{StaticResource SectionBorder}">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Blurry photos" Style="{StaticResource CategoryTitle}" />
+                    <HorizontalStackLayout Spacing="8">
+                        <Button Text="Scan" Clicked="OnScanBlurry" />
+                        <Button Text="Add test data" Clicked="OnSeedBlurry" />
+                    </HorizontalStackLayout>
+                    <Label x:Name="BlurryResult" Style="{StaticResource ResultLabel}" Text="—" />
+                    <VerticalStackLayout x:Name="BlurryList" Spacing="8" />
+                </VerticalStackLayout>
+            </Border>
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

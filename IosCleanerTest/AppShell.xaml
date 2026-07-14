@@ -19,6 +19,10 @@
             Title="Level 3"
             ContentTemplate="{DataTemplate local:Level3Page}"
             Route="Level3" />
+        <ShellContent
+            Title="Level 4"
+            ContentTemplate="{DataTemplate local:Level4Page}"
+            Route="Level4" />
     </TabBar>
 
 </Shell>

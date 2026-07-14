@@ -30,4 +30,10 @@ public interface IPhotoCleanerService
     /// the first file of each group stays as the reference.
     /// </summary>
     Task<ScanResult> FindSimilarPhotosAsync();
+
+    /// <summary>
+    /// Level 4: blurry photos via variance of the Laplacian on a grayscale preview.
+    /// Low variance = few sharp edges = blurry. Threshold is reported in Diagnostics.
+    /// </summary>
+    Task<ScanResult> FindBlurryPhotosAsync();
 }

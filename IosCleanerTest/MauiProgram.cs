@@ -26,6 +26,7 @@ namespace IosCleanerTest
             builder.Services.AddTransient<MainPage>();
             builder.Services.AddTransient<Level2Page>();
             builder.Services.AddTransient<Level3Page>();
+            builder.Services.AddTransient<Level4Page>();
 
 #if DEBUG
     		builder.Logging.AddDebug();

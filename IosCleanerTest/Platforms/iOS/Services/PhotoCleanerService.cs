@@ -142,11 +142,6 @@ public class PhotoCleanerService : IPhotoCleanerService
         return new ScanResult("Duplicates", items);
     });
 
-    // Euclidean distance between Vision feature print vectors: 0 = identical.
-    // The absolute scale depends on the feature print revision, so the scan reports
-    // observed min/max distances in Diagnostics — use them to calibrate this value.
-    private const float SimilarDistanceThreshold = 0.6f;
-
     public Task<ScanResult> FindSimilarPhotosAsync() => Task.Run(() =>
     {
         var total = 0;
@@ -161,10 +156,33 @@ public class PhotoCleanerService : IPhotoCleanerService
                 entries.Add((asset, vector));
         }
 
+        // The absolute scale of feature print distances depends on the Vision revision,
+        // so the threshold is derived from the data itself: similar pairs sit far below
+        // the median distance of a mostly-unrelated library.
+        var distances = new float[entries.Count, entries.Count];
+        var allDistances = new List<float>();
+        for (var i = 0; i < entries.Count; i++)
+            for (var j = i + 1; j < entries.Count; j++)
+            {
+                var d = entries[i].Vector.Length == entries[j].Vector.Length
+                    ? EuclideanDistance(entries[i].Vector, entries[j].Vector)
+                    : float.MaxValue;
+                distances[i, j] = d;
+                if (d < float.MaxValue)
+                    allDistances.Add(d);
+            }
+
+        float median = 0, threshold = 0;
+        if (allDistances.Count > 0)
+        {
+            var sorted = allDistances.OrderBy(d => d).ToList();
+            median = sorted[sorted.Count / 2];
+            threshold = 0.5f * median;
+        }
+
         var groupIndex = new int[entries.Count];
         Array.Fill(groupIndex, -1);
         var groups = new List<List<int>>();
-        float minDist = float.MaxValue, maxDist = 0;
 
         for (var i = 0; i < entries.Count; i++)
         {
@@ -176,14 +194,7 @@ public class PhotoCleanerService : IPhotoCleanerService
 
             for (var j = i + 1; j < entries.Count; j++)
             {
-                if (entries[i].Vector.Length != entries[j].Vector.Length)
-                    continue;
-
-                var distance = EuclideanDistance(entries[i].Vector, entries[j].Vector);
-                minDist = Math.Min(minDist, distance);
-                maxDist = Math.Max(maxDist, distance);
-
-                if (groupIndex[j] == -1 && distance <= SimilarDistanceThreshold)
+                if (groupIndex[j] == -1 && distances[i, j] <= threshold)
                 {
                     groupIndex[j] = groupIndex[i];
                     groups[groupIndex[i]].Add(j);
@@ -207,8 +218,8 @@ public class PhotoCleanerService : IPhotoCleanerService
             }
         }
 
-        var stats = entries.Count > 1 && minDist < float.MaxValue
-            ? $", distances {minDist:F2}–{maxDist:F2} (threshold {SimilarDistanceThreshold:F2})"
+        var stats = allDistances.Count > 0
+            ? $", distances {allDistances.Min():F2}–{allDistances.Max():F2}, median {median:F2}, threshold {threshold:F2}"
             : "";
         var error = firstError is null ? "" : $", first error: {firstError}";
         var diagnostics = $"[photos {total}, embeddings {entries.Count}{stats}{error}]";
@@ -270,6 +281,87 @@ public class PhotoCleanerService : IPhotoCleanerService
         }
 
         return (float)Math.Sqrt(sum);
+    }
+
+    // Variance of the Laplacian on a 96x96 grayscale preview. Sharp photos score in the
+    // hundreds-to-thousands; Gaussian-blurred ones drop well below 100. Tune on real libraries.
+    private const double BlurVarianceThreshold = 60;
+
+    public Task<ScanResult> FindBlurryPhotosAsync() => Task.Run(() =>
+    {
+        var total = 0;
+        double minScore = double.MaxValue, maxScore = 0;
+        var items = new List<CleanerItem>();
+
+        foreach (var asset in FetchAssets(PHAssetMediaType.Image))
+        {
+            total++;
+            var score = ComputeBlurScore(asset);
+            if (score is not { } variance)
+                continue;
+
+            minScore = Math.Min(minScore, variance);
+            maxScore = Math.Max(maxScore, variance);
+
+            if (variance < BlurVarianceThreshold)
+            {
+                var item = ToItem(asset, PrimaryResource(asset));
+                items.Add(item with
+                {
+                    Name = $"{item.Name} (sharpness {variance:F0})",
+                    Thumbnail = GetThumbnailJpeg(asset),
+                });
+            }
+        }
+
+        var stats = total > 0 && minScore < double.MaxValue
+            ? $", sharpness {minScore:F0}–{maxScore:F0}, threshold {BlurVarianceThreshold:F0}"
+            : "";
+        return new ScanResult("Blurry photos", items, $"[photos {total}{stats}]");
+    });
+
+    /// <summary>Variance of a 4-neighbor Laplacian over a 96x96 grayscale preview.</summary>
+    private static double? ComputeBlurScore(PHAsset asset)
+    {
+        UIImage? image = null;
+        var options = new PHImageRequestOptions
+        {
+            Synchronous = true,
+            DeliveryMode = PHImageRequestOptionsDeliveryMode.HighQualityFormat,
+            ResizeMode = PHImageRequestOptionsResizeMode.Fast,
+            NetworkAccessAllowed = true,
+        };
+        PHImageManager.DefaultManager.RequestImageForAsset(
+            asset, new CGSize(128, 128), PHImageContentMode.AspectFill, options,
+            (result, _) => image = result);
+
+        if (image?.CGImage is not { } cgImage)
+            return null;
+
+        const int size = 96;
+        var pixels = new byte[size * size];
+        using var colorSpace = CGColorSpace.CreateDeviceGray();
+        using var context = new CGBitmapContext(pixels, size, size, 8, size, colorSpace, CGImageAlphaInfo.None);
+        context.DrawImage(new CGRect(0, 0, size, size), cgImage);
+
+        double sum = 0, sumSquares = 0;
+        var count = 0;
+        for (var y = 1; y < size - 1; y++)
+            for (var x = 1; x < size - 1; x++)
+            {
+                var laplacian =
+                    4.0 * pixels[y * size + x]
+                    - pixels[(y - 1) * size + x]
+                    - pixels[(y + 1) * size + x]
+                    - pixels[y * size + x - 1]
+                    - pixels[y * size + x + 1];
+                sum += laplacian;
+                sumSquares += laplacian * laplacian;
+                count++;
+            }
+
+        var mean = sum / count;
+        return sumSquares / count - mean * mean;
     }
 
     private static byte[]? GetThumbnailJpeg(PHAsset asset)
