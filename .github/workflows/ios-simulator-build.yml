@@ -22,7 +22,8 @@ jobs:
       - name: Build iOS simulator app (universal x64+arm64)
         # Universal binary: Appetize hosts on Apple Silicon run the native arm64 slice,
         # which CoreML/Vision require (they fail under Rosetta x64 emulation)
-        run: dotnet build IosCleanerTest/IosCleanerTest.csproj -f net9.0-ios -c Debug -p:RuntimeIdentifiers="iossimulator-x64;iossimulator-arm64"
+        # single quotes keep the inner double quotes so MSBuild sees the semicolon as part of the value
+        run: dotnet build IosCleanerTest/IosCleanerTest.csproj -f net9.0-ios -c Debug '-p:RuntimeIdentifiers="iossimulator-x64;iossimulator-arm64"'
 
       - name: Show produced .app bundles
         run: find IosCleanerTest/bin/Debug/net9.0-ios -maxdepth 2 -name "*.app" -print
