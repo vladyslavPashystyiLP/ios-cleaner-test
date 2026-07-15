@@ -28,6 +28,9 @@ namespace IosCleanerTest
             {
                 var result = await _cleaner.FindDuplicatesAsync();
                 CleanerUi.ShowResult(DuplicatesResult, DuplicatesList, result);
+
+                if (result.Items.Count == 0 && result.Diagnostics is not null)
+                    await DisplayAlert("Scan diagnostics", result.Diagnostics, "OK");
             }
             catch (Exception ex)
             {

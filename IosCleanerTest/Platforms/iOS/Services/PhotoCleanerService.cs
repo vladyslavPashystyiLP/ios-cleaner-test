@@ -249,7 +249,8 @@ public class PhotoCleanerService : IPhotoCleanerService
 
         using var handler = new VNImageRequestHandler(cgImage, new VNImageOptions());
         using var request = new VNGenerateImageFeaturePrintRequest((VNRequestCompletionHandler?)null);
-        request.UsesCpuOnly = true; // no GPU/ANE on the simulator
+        // Deliberately NOT setting UsesCpuOnly: it is deprecated and forcing it
+        // can fail the request on newer OS versions; Vision picks the device itself
 
         if (!handler.Perform([request], out var error))
         {
